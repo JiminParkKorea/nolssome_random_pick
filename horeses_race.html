@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>경마 게임</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+    }
+    h1 { margin: 20px; }
+    #raceTrack {
+        position: relative;
+        width: 90%;
+        margin: auto;
+    }
+    .lane {
+        position: relative;
+        height: 40px;
+        margin: 5px 0;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    .name {
+        position: absolute;
+        left: 10px;
+        top: 8px;
+        font-weight: bold;
+    }
+    .horse {
+        position: absolute;
+        left: 80px;
+        top: 5px;
+        font-size: 24px;
+        transition: left 0.15s;
+    }
+    .finishLine {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: red;
+        right: 60px;
+    }
+    .rank {
+        position: absolute;
+        right: 5px;
+        top: 8px;
+        font-weight: bold;
+        font-size: 14px;
+        color: blue;
+    }
+    button {
+        margin: 15px;
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+    canvas {
+        position: absolute;
+        pointer-events: none;
+    }
+</style>
+</head>
+<body>
+
+<h1>🐎 경마 게임</h1>
+<div>
+    <button onclick="startRace()">시작</button>
+    <button onclick="location.reload()">새로고침</button>
+</div>
+
+<div id="raceTrack"></div>
+
+<script>
+const names = [
+    "연선","지민","은영","슬기","윤성",
+    "재영","예슬","관형","인상","세휘",
+    "윤정","나라","현주","수민","서율",
+    "성구","종화","푸름","승명","은정",
+    "세영","은선","수성"
+];
+
+const horseIcons = ["🐎","🏇","🏇🏻","🏇🏼","🏇🏽","🏇🏾","🏇🏿"];
+let shuffledNames = names.sort(() => Math.random() - 0.5);
+
+const track = document.getElementById("raceTrack");
+
+shuffledNames.forEach((name, idx) => {
+    let lane = document.createElement("div");
+    lane.className = "lane";
+    lane.innerHTML = `
+        <span class="name">${name}</span>
+        <span class="horse" id="horse${idx}">${horseIcons[idx % horseIcons.length]}</span>
+        <div class="finishLine"></div>
+        <span class="rank" id="rank${idx}"></span>
+    `;
+    track.appendChild(lane);
+});
+
+let positions = new Array(names.length).fill(80);
+let finished = [];
+let raceInterval;
+
+function startRace() {
+    if (raceInterval) return; // 중복 방지
+    const finishPos = track.clientWidth - 120; // 결승선 위치(순위 표시 공간 확보)
+
+    raceInterval = setInterval(() => {
+        for (let i = 0; i < positions.length; i++) {
+            if (finished.includes(i)) continue; // 이미 도착한 말 제외
+
+            // 속도 랜덤, 약간의 역전 가능
+            positions[i] += Math.random() * 40 + 10;
+
+            if (positions[i] >= finishPos) {
+                positions[i] = finishPos;
+                finished.push(i);
+                document.getElementById(`rank${i}`).textContent = finished.length + "등";
+                launchConfetti(i);
+            }
+
+            document.getElementById(`horse${i}`).style.left = positions[i] + "px";
+        }
+
+        // 모든 말이 도착했으면 종료
+        if (finished.length === positions.length) {
+            clearInterval(raceInterval);
+        }
+    }, 150); // 0.15초마다 위치 갱신
+}
+
+// 폭죽 효과
+function launchConfetti(laneIndex) {
+    let lane = document.getElementsByClassName("lane")[laneIndex];
+    let canvas = document.createElement("canvas");
+    canvas.width = lane.clientWidth;
+    canvas.height = lane.clientHeight;
+    lane.appendChild(canvas);
+
+    let ctx = canvas.getContext("2d");
+    let particles = [];
+    for (let i = 0; i < 20; i++) {
+        particles.push({
+            x: lane.clientWidth - 70,
+            y: lane.clientHeight / 2,
+            r: Math.random() * 4 + 2,
+            dx: Math.random() * 4 - 2,
+            dy: Math.random() * -3 - 1,
+            color: `hsl(${Math.random()*360}, 100%, 50%)`
+        });
+    }
+
+    let confettiInterval = setInterval(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.x += p.dx;
+            p.y += p.dy;
+            p.dy += 0.1;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        });
+    }, 30);
+
+    setTimeout(() => {
+        clearInterval(confettiInterval);
+        canvas.remove();
+    }, 1000);
+}
+</script>
+
+</body>
+</html>
