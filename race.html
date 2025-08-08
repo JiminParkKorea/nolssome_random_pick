@@ -64,6 +64,35 @@
         position: absolute;
         pointer-events: none;
     }
+
+    /* 모달 스타일 */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+    }
+    .modal-content {
+        background: white;
+        padding: 20px 40px;
+        border-radius: 10px;
+        text-align: center;
+        min-width: 300px;
+    }
+    .modal-content h2 {
+        margin-bottom: 15px;
+    }
+    .modal-content ul {
+        list-style: none;
+        padding: 0;
+    }
+    .modal-content li {
+        font-size: 18px;
+        margin: 5px 0;
+    }
 </style>
 </head>
 <body>
@@ -75,6 +104,15 @@
 </div>
 
 <div id="raceTrack"></div>
+
+<!-- 모달 -->
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <h2>🏆 상위 5위 결과</h2>
+        <ul id="top5List"></ul>
+        <button onclick="closeModal()">닫기</button>
+    </div>
+</div>
 
 <script>
 const names = [
@@ -107,35 +145,34 @@ let finished = [];
 let raceInterval;
 
 function startRace() {
-    if (raceInterval) return; // 중복 방지
-    const finishPos = track.clientWidth - 120; // 결승선 위치(순위 표시 공간 확보)
+    if (raceInterval) return;
+    const finishPos = track.clientWidth - 120;
 
     raceInterval = setInterval(() => {
         for (let i = 0; i < positions.length; i++) {
-            if (finished.includes(i)) continue; // 이미 도착한 말 제외
+            if (finished.includes(i)) continue;
 
-            // 속도 랜덤, 약간의 역전 가능
             positions[i] += Math.random() * 40 + 10;
 
             if (positions[i] >= finishPos) {
                 positions[i] = finishPos;
                 finished.push(i);
                 document.getElementById(`rank${i}`).textContent = finished.length + "등";
-                launchConfetti(i);
+                launchConfettiLane(i);
             }
 
             document.getElementById(`horse${i}`).style.left = positions[i] + "px";
         }
 
-        // 모든 말이 도착했으면 종료
         if (finished.length === positions.length) {
             clearInterval(raceInterval);
+            showTop5();
+            launchConfettiFull();
         }
-    }, 150); // 0.15초마다 위치 갱신
+    }, 150);
 }
 
-// 폭죽 효과
-function launchConfetti(laneIndex) {
+function launchConfettiLane(laneIndex) {
     let lane = document.getElementsByClassName("lane")[laneIndex];
     let canvas = document.createElement("canvas");
     canvas.width = lane.clientWidth;
@@ -172,6 +209,64 @@ function launchConfetti(laneIndex) {
         clearInterval(confettiInterval);
         canvas.remove();
     }, 1000);
+}
+
+function launchConfettiFull() {
+    let canvas = document.createElement("canvas");
+    canvas.style.position = "fixed";
+    canvas.style.top = 0;
+    canvas.style.left = 0;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.zIndex = 1000;
+    document.body.appendChild(canvas);
+
+    let ctx = canvas.getContext("2d");
+    let particles = [];
+    for (let i = 0; i < 150; i++) {
+        particles.push({
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            r: Math.random() * 4 + 2,
+            dx: Math.random() * 8 - 4,
+            dy: Math.random() * 8 - 4,
+            color: `hsl(${Math.random()*360}, 100%, 50%)`
+        });
+    }
+
+    let confettiInterval = setInterval(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.x += p.dx;
+            p.y += p.dy;
+            p.dy += 0.05;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        });
+    }, 30);
+
+    setTimeout(() => {
+        clearInterval(confettiInterval);
+        canvas.remove();
+    }, 2000);
+}
+
+function showTop5() {
+    let top5 = finished.slice(0, 5).map((idx, rank) => ({
+        name: shuffledNames[idx],
+        rank: rank + 1
+    }));
+
+    let list = document.getElementById("top5List");
+    list.innerHTML = top5.map(p => `<li>${p.rank}등 - ${p.name}</li>`).join("");
+
+    document.getElementById("resultModal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("resultModal").style.display = "none";
 }
 </script>
 
