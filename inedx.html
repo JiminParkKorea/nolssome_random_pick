@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>랜덤 이름 뽑기</title>
+<style>
+    body {
+        background: #222;
+        color: white;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    #name {
+        font-size: 6rem;
+        font-weight: bold;
+    }
+    #message {
+        font-size: 2rem;
+        margin-top: 20px;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+</style>
+</head>
+<body>
+
+<div id="name">?</div>
+<div id="message">축하합니다~!</div>
+
+<!-- 효과음 -->
+<audio id="tada-sound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_982ae6f432.mp3?filename=tada-fanfare-a-6313.mp3" preload="auto"></audio>
+
+<!-- 폭죽 라이브러리 -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+    const nameEl = document.getElementById('name');
+    const messageEl = document.getElementById('message');
+    const tadaSound = document.getElementById('tada-sound');
+
+    const names = [
+        "연선", "지민", "은영", "슬기", "윤성",
+        "재영", "예슬", "관형", "인상", "세휘",
+        "윤정", "나라", "현주", "수민", "서율",
+        "성구", "종화", "푸름", "승명", "은정",
+        "세영", "은선", "수성"
+    ];
+
+    let running = false; // 현재 추첨 중 여부
+    let intervalId = null;
+
+    function startRolling() {
+        running = true;
+        messageEl.style.opacity = 0;
+        intervalId = setInterval(() => {
+            const randomIndex = Math.floor(Math.random() * names.length);
+            nameEl.textContent = names[randomIndex];
+        }, 50); // 이름 바뀌는 속도
+    }
+
+    function stopRolling() {
+        running = false;
+        clearInterval(intervalId);
+        messageEl.style.opacity = 1;
+
+        // 효과음 재생
+        tadaSound.currentTime = 0;
+        tadaSound.play();
+
+        // 폭죽 효과
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 }
+        });
+    }
+
+    // 스페이스바로 시작/정지
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault(); // 페이지 스크롤 방지
+            if (running) {
+                stopRolling();
+            } else {
+                startRolling();
+            }
+        }
+    });
+
+    // 처음 페이지 진입 시 자동 시작
+    startRolling();
+</script>
+
+</body>
+</html>
